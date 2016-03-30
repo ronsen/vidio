@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 import sys
 import urllib2
+import m3u8
 from BeautifulSoup import BeautifulSoup
+import wget
 
 def open_url(url):
 	try:
@@ -15,7 +17,7 @@ def open_url(url):
 		print e
 		sys.exit(1)
 
-def get_playlist(parsed_html):
+def get_playlist_url(parsed_html):
 	try:
 		playlists = parsed_html.findAll("div", {"data-clip-hls-url": True})
 
@@ -25,15 +27,33 @@ def get_playlist(parsed_html):
 		print e
 		sys.exit(1)
 
-if __name__ == "__main__":
-	print "Vidio.com Downloader"
+def get_playlist(playlist_url, resolution):
+	m3u8_obj = m3u8.load(playlist_url)
 
+	for playlist in m3u8_obj.playlists:
+		if str(playlist.stream_info).find(resolution) > 0:
+			return playlist.uri
+
+def open_playlist(playlist):
+	m3u8_obj = m3u8.load(playlist)
+	return m3u8_obj
+
+def download_videos(m3u8_obj):
+	base_uri = m3u8_obj._base_uri
+
+	for file in m3u8_obj.files:
+		video_url = base_uri + "/" + file
+		wget.download(video_url)
+
+if __name__ == "__main__":
 	url = sys.argv[1]
 
 	html = open_url(url)
 	parsed_html = BeautifulSoup(html)
 
-	playlist = get_playlist(parsed_html)
-	playlist = open_url(playlist)
+	playlist_url = get_playlist_url(parsed_html)
+	playlist = get_playlist(playlist_url, "360")
 
-	print playlist
+	m3u8_obj = open_playlist(playlist)
+	download_videos(m3u8_obj)
+	
