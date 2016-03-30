@@ -56,4 +56,6 @@ if __name__ == "__main__":
 
 	m3u8_obj = open_playlist(playlist)
 	download_videos(m3u8_obj)
+
+	print "Download finished. You can now manually merge all the downloaded files."
 	
